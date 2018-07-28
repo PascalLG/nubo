@@ -75,7 +75,7 @@
         if (($row = reset($result)) !== false && password_verify($params['password'], $row['value'])) {
         	$selector = bin2hex(random_bytes(16));
         	$validator = bin2hex(random_bytes(16));
-            $db->execute('INSERT INTO tbl_computer(computer, hostname, selector, validator, atime) VALUES (:computer, :hostname, :selector, :validator, :atime)', [
+            $db->execute('INSERT INTO tbl_computer(computer, hostname, selector, validator, atime, lock) VALUES (:computer, :hostname, :selector, :validator, :atime, 0)', [
                 'computer/text' => $params['computer'],
                 'hostname/text' => $params['hostname'],
                 'selector/text' => $selector,
@@ -101,8 +101,14 @@
     // with their hash.
 
     function cmd_directory($db, $params) {
+        $result = $db->select('SELECT value FROM tbl_config WHERE key="ctime" LIMIT 1');
+        if (($row = reset($result)) !== false) {
+            $ctime = unpack('L', $row['value'])[1];
+        } else {
+            $ctime = 0;
+        }
         $result = $db->select('SELECT filename AS f, hash AS h FROM tbl_file');
-        return ['result' => $result];
+        return ['result' => $result, 'ctime' => $ctime];
     }
 
     // Put command. Store an archive sent by the client application. The
