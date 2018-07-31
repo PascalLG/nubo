@@ -78,12 +78,15 @@ cmdSync args = do
 doSync :: Bool -> Bool -> SyncPriority -> [String] -> EnvIO ExitStatus
 doSync csv dry priority params = do
     setupTlsManager
+    ctime <- getConfig CfgServerCTime
     result <- callWebService "directory" MsgNull ProgressNone
-    case result >>= parseFileList of
+    case result >>= parseResponse ctime of
         Left err -> do
             putErr err
             return StatusInvalidServerResponse
-        Right remote' -> do
+        Right (ctime', remote') -> do
+            whenJust_ ctime' $ saveConfig CfgServerCTime
+
             env <- get
             let Just root = rootPath env
             let printfnc = if csv then printActionCsv else printActionStd
@@ -118,6 +121,32 @@ doSync csv dry priority params = do
             return $ if (and oks) then StatusOK else StatusSynchronizationFailed
 
     where
+        parseResponse :: Maybe Int -> MsgValue -> Either Error (Maybe Int, [(UFilePath, B.ByteString)])
+        parseResponse ctime msg = case (msg !? "ctime", msg !? "result") of
+            (Just (MsgInteger t), Just (MsgArray a)) -> do
+                t' <- checkCTime ctime t
+                a' <- parseFileList a
+                return (t', a')
+            _                                        -> Left (ErrCloudGeneric "invalid server response")
+
+        checkCTime :: Maybe Int -> Int -> Either Error (Maybe Int)
+        checkCTime Nothing   t2 = Right (Just t2)
+        checkCTime (Just t1) t2
+            | t1 == t2          = Right Nothing
+            | otherwise         = Left ErrServerCreationTime
+
+        parseFileList :: [MsgValue] -> Either Error [(UFilePath, B.ByteString)]
+        parseFileList a = case sequence (map parsefile a) of
+            Just r -> Right $ sortBy compareFiles r
+            _       -> Left (ErrCloudGeneric "invalid server response")
+            where
+                parsefile :: MsgValue -> Maybe (UFilePath, B.ByteString)
+                parsefile file = case (file !? "f", file !? "h") of
+                        (Just (MsgString f), Just (MsgString h)) -> Just (f, encodeUtf8 h)
+                        _                                        -> Nothing
+
+{-            
+
         parseFileList :: MsgValue -> Either Error [(UFilePath, B.ByteString)]
         parseFileList msg = case msg !? "result" >>= parselist of
             Just r  -> Right $ sortBy compareFiles r
@@ -131,7 +160,7 @@ doSync csv dry priority params = do
                 parsefile file = case (file !? "f", file !? "h") of
                         (Just (MsgString f), Just (MsgString h)) -> Just (f, encodeUtf8 h)
                         _                                        -> Nothing
-
+-}
         compareFiles :: (UFilePath, a) -> (UFilePath, a) -> Ordering
         compareFiles (f1, _) (f2, _) = compare f1 f2
 

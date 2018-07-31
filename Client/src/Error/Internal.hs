@@ -39,6 +39,7 @@ data Error =
     | ErrDatabaseNotFound
     | ErrServerInvalidURL String
     | ErrServerConnectionFailure
+    | ErrServerCreationTime
     | ErrServerOtherException String
     | ErrServer400 Int
     | ErrServer500 Int
@@ -89,6 +90,7 @@ renderError (ErrCorruptedArchive path)      = "corrupted archive for file '" ++ 
 renderError (ErrDatabaseNotFound)           = "database not found, folder is probably not synchronised"
 renderError (ErrServerInvalidURL url)       = "invalid URL: '" ++ url ++ "'"
 renderError (ErrServerConnectionFailure)    = "connection failed"
+renderError (ErrServerCreationTime)         = "server data are more recent than local cache, run 'nubo init' to fix"
 renderError (ErrServerOtherException desc)  = "unexpected error (" ++ desc ++ ")"
 renderError (ErrServer400 status)           = "page not found (HTTP " ++ show status ++ ")"
 renderError (ErrServer500 status)           = "internal server error (HTTP " ++ show status ++ ")"

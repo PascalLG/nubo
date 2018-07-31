@@ -48,7 +48,7 @@
                     $db = new NuboDatabase();
                     $db->execute('BEGIN TRANSACTION');
                     $db->execute('CREATE TABLE tbl_config (config_id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, value BLOB)');
-                    $db->execute('CREATE TABLE tbl_computer (computer_id INTEGER PRIMARY KEY AUTOINCREMENT, hostname TEXT, computer TEXT NOT NULL, selector TEXT NOT NULL, validator TEXT NOT NULL, atime INTEGER NOT NULL, lock INTEGER NOT NULL)');
+                    $db->execute('CREATE TABLE tbl_computer (computer_id INTEGER PRIMARY KEY AUTOINCREMENT, hostname TEXT, computer TEXT NOT NULL, selector TEXT, validator TEXT, atime INTEGER NOT NULL, lock INTEGER NOT NULL)');
                     $db->execute('CREATE TABLE tbl_file (file_id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT NOT NULL, hash TEXT NOT NULL, mtime INTEGER NOT NULL)');
                     $db->execute('INSERT INTO tbl_config (key, value) VALUES ("password", :password)', ['password/blob' => password_hash($pwd1, PASSWORD_DEFAULT)]);
                     $db->execute('INSERT INTO tbl_config (key, value) VALUES ("salt", :salt)', ['salt/blob' => random_bytes(32)]);

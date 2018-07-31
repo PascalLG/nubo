@@ -154,6 +154,7 @@ data Config =
     | CfgRemoteURL
     | CfgMasterKey
     | CfgAuthToken
+    | CfgServerCTime
     deriving (Eq)
 
 -- | Implement Show to convert a config parameter to a string that
@@ -165,7 +166,8 @@ instance Show Config where
     show CfgRemoteURL    = "url"
     show CfgMasterKey    = "key"
     show CfgAuthToken    = "auth"
- 
+    show CfgServerCTime  = "ctime"
+
 -- | Save a configuration parameter.
 --
 saveConfigIO :: (Binary a) => Config -> a -> Connection -> IO ()
