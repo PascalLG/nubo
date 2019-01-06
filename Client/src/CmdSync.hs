@@ -145,22 +145,6 @@ doSync csv dry priority params = do
                         (Just (MsgString f), Just (MsgString h)) -> Just (f, encodeUtf8 h)
                         _                                        -> Nothing
 
-{-            
-
-        parseFileList :: MsgValue -> Either Error [(UFilePath, B.ByteString)]
-        parseFileList msg = case msg !? "result" >>= parselist of
-            Just r  -> Right $ sortBy compareFiles r
-            _       -> Left (ErrCloudGeneric "invalid server response")
-            where
-                parselist :: MsgValue -> Maybe [(UFilePath, B.ByteString)]
-                parselist (MsgArray a)  = sequence $ map parsefile a
-                parselist _             = Nothing
-
-                parsefile :: MsgValue -> Maybe (UFilePath, B.ByteString)
-                parsefile file = case (file !? "f", file !? "h") of
-                        (Just (MsgString f), Just (MsgString h)) -> Just (f, encodeUtf8 h)
-                        _                                        -> Nothing
--}
         compareFiles :: (UFilePath, a) -> (UFilePath, a) -> Ordering
         compareFiles (f1, _) (f2, _) = compare f1 f2
 

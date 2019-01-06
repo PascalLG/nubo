@@ -48,7 +48,7 @@
                     $db = new NuboDatabase();
                     $db->execute('BEGIN TRANSACTION');
                     $db->execute('CREATE TABLE tbl_config (config_id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, value BLOB)');
-                    $db->execute('CREATE TABLE tbl_computer (computer_id INTEGER PRIMARY KEY AUTOINCREMENT, hostname TEXT, computer TEXT NOT NULL, selector TEXT, validator TEXT, atime INTEGER NOT NULL, lock INTEGER NOT NULL)');
+                    $db->execute('CREATE TABLE tbl_computer (computer_id INTEGER PRIMARY KEY AUTOINCREMENT, hostname TEXT, computer TEXT NOT NULL, selector TEXT, validator TEXT, atime INTEGER NOT NULL, lock INTEGER)');
                     $db->execute('CREATE TABLE tbl_file (file_id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT NOT NULL, hash TEXT NOT NULL, mtime INTEGER NOT NULL)');
                     $db->execute('INSERT INTO tbl_config (key, value) VALUES ("password", :password)', ['password/blob' => password_hash($pwd1, PASSWORD_DEFAULT)]);
                     $db->execute('INSERT INTO tbl_config (key, value) VALUES ("salt", :salt)', ['salt/blob' => random_bytes(32)]);
@@ -135,21 +135,27 @@ EOT;
     } else {
         try {
             $db = new NuboDatabase();
+            $islocked = false;
             echo "<h2>Computers</h2>\n";
-            $result = $db->select('SELECT computer_id, hostname, atime, validator FROM tbl_computer ORDER BY hostname ASC, atime DESC');
+            $result = $db->select('SELECT computer_id, hostname, atime, validator, lock FROM tbl_computer ORDER BY hostname ASC, atime DESC');
             if (count($result)) {
                 echo "<table>";
                 echo "<tr><th>Name</th><th>Last synchronised</th><th>Status</th><th>Actions</th></tr>\n";
                 foreach ($result as $row) {
                     $name = htmlspecialchars($row['hostname'], ENT_COMPAT, 'UTF-8');
+                    $lock = !is_null($row['lock']);
+                    $islocked |= $lock;
                     echo "<tr>";
                     echo "<td>$name</td>";
                     echo "<td>", formatDate($row['atime']), "</td>";
-                    echo "<td>", ($row['validator'] ? "OK" : "Auth failed"), "</td>";
+                    echo "<td>", ($row['validator'] ? ($lock ? "Syncing" : "OK") : "Auth failed"), "</td>";
                     echo "<td><a href=\"javascript:revokeComputer(${row['computer_id']}, '$name');\">Revoke</a></td>";
                     echo "</tr>\n";
                 }
                 echo "</table>\n";
+                if ($islocked) {
+                    echo "<p>The cloud is locked because a computer is currently syncing. If this information is outdated, you can <a href=\"javascript:releaseLock();\">force unlock</a>.</p>\n";
+                }
             } else {
                 echo "<p>No computers are synchronised yet with this storage.</p>\n";
             }
@@ -164,7 +170,7 @@ EOT;
                     echo "<td>", htmlspecialchars(abbreviatePath($row['filename'], 120), ENT_COMPAT, 'UTF-8'), "</td>";
                     echo "<td>", formatDate($row['mtime']), "</td>";
                     $fullname = htmlspecialchars($row['filename'], ENT_COMPAT, 'UTF-8');
-                    echo "<td><a href=\"javascript:deleteFile(${row['file_id']}, '$fullname');\">Delete</a></td>";
+                    echo "<td><a href=\"javascript:deleteFile(${row['file_id']}, '$fullname', $islocked);\">Delete</a></td>";
                     echo "</tr>\n";
                 }
                 $plural = ($numfiles != 1) ? "s" : "";
@@ -202,7 +208,7 @@ EOT;
             } else {
                 echo "<p>Sorry, there is no client application for your platform yet.</p>\n";
             }
-            echo "<p class=\"copyright\">© 2017-2018, Æquans - Version ", VERSION, "</p>\n";
+            echo "<p class=\"copyright\">© 2017-2019, Æquans - Version ", VERSION, "</p>\n";
         } catch (NuboException $e) {
             echo "<p>Unexpected error.</p>\n";
         }
