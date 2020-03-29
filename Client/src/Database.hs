@@ -103,8 +103,8 @@ isValidNuboDB path = bracket (connectSqlite3 path)
 createDBAndRun :: EnvIO ExitStatus -> EnvIO ExitStatus
 createDBAndRun action = bracketEnvIO create cleanup exec
     where
-        create :: IO Connection
-        create = do
+        create :: EnvIO Connection
+        create = liftIO $ do
             db <- connectSqlite3 nuboDatabase
             _ <- run db "CREATE TABLE IF NOT EXISTS config(config_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, value BLOB)" []
             _ <- run db "CREATE TABLE IF NOT EXISTS file(file_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, filename TEXT NOT NULL UNIQUE, hash TEXT NOT NULL)" []
@@ -115,8 +115,8 @@ createDBAndRun action = bracketEnvIO create cleanup exec
             commit db
             return db
 
-        cleanup :: Connection -> IO ()
-        cleanup db = do
+        cleanup :: Connection -> EnvIO ()
+        cleanup db = liftIO $ do
             disconnect db
             setDatabaseAttributes nuboDatabase
 
@@ -135,8 +135,8 @@ openDBAndRun action = do
     optpath <- liftIO findNuboDB
     case optpath of
         Nothing    -> putErr ErrDatabaseNotFound >> return StatusDatabaseNotFound
-        Just path  -> bracketEnvIO (connectSqlite3 (path </> nuboDatabase))
-                                   (disconnect)
+        Just path  -> bracketEnvIO (liftIO $ connectSqlite3 (path </> nuboDatabase))
+                                   (liftIO . disconnect)
                                    (\db -> do
                                        env <- get
                                        put env { dbConn = Just db, rootPath = Just path }

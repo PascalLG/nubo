@@ -27,6 +27,7 @@ module CmdSync (
 ) where
 
 import qualified Data.ByteString as B
+import qualified Data.Text as T
 import Control.Monad (forM, forM_)
 import Control.Monad.Trans (liftIO)
 import Control.Monad.State (get)
@@ -58,10 +59,10 @@ cmdSync args = do
         Left errs           -> mapM_ putErr errs >> return StatusInvalidCommand
         Right (opts, files) -> case priority opts of
                                    Left err -> putErr err >> return StatusInvalidCommand
-                                   Right p  -> openDBAndRun $ doSync (OptionCSV `elem` opts)
-                                                                     (OptionDry `elem` opts)
-                                                                     p
-                                                                     files
+                                   Right p  -> openDBAndRun $ lockAndSync $ doSync (OptionCSV `elem` opts)
+                                                                                   (OptionDry `elem` opts)
+                                                                                   p
+                                                                                   files
     where
         priority :: [Option] -> Either Error SyncPriority
         priority flags
@@ -75,9 +76,29 @@ cmdSync args = do
 
 -- | Execute the 'sync' command.
 --
+
+lockAndSync :: EnvIO ExitStatus -> EnvIO ExitStatus
+lockAndSync sync = do
+    setupTlsManager
+    lock <- callWebLock True
+    case lock of
+        Right "locked"  -> finallyEnvIO sync (callWebLock False) 
+        Right "busy"    -> putErr ErrCloudLocked >> return StatusSynchronizationFailed
+        Right v         -> putErr (ErrCloudGeneric ("lock returned " ++ v)) >> return StatusSynchronizationFailed
+        Left err        -> putErr err >> return StatusInvalidServerResponse
+
+    where
+        callWebLock :: Bool -> EnvIO (Either Error String)
+        callWebLock lock = do
+            result <- callWebService "lock" (MsgObject [("lock", MsgBool lock)]) ProgressNone
+            return $ result >>= \msg -> case msg !? "status" of
+                                    Just (MsgString x) -> Right $ T.unpack x
+                                    _                  -> Left (ErrCloudGeneric "invalid server response")
+
+-- | Execute the 'sync' command.
+--
 doSync :: Bool -> Bool -> SyncPriority -> [String] -> EnvIO ExitStatus
 doSync csv dry priority params = do
-    setupTlsManager
     ctime <- getConfig CfgServerCTime
     result <- callWebService "directory" MsgNull ProgressNone
     case result >>= parseResponse ctime of

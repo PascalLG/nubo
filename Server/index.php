@@ -154,7 +154,7 @@ EOT;
                 }
                 echo "</table>\n";
                 if ($islocked) {
-                    echo "<p>The cloud is locked because a computer is currently syncing. If this information is outdated, you can <a href=\"javascript:releaseLock();\">force unlock</a>.</p>\n";
+                    echo "<p>The cloud is locked because a computer is currently syncing. If you have good reasons to think this information is outdated, you can <a href=\"javascript:releaseLock();\">force unlocking</a>.</p>\n";
                 }
             } else {
                 echo "<p>No computers are synchronised yet with this storage.</p>\n";
@@ -184,7 +184,7 @@ EOT;
                 echo <<<EOT
 <p>To install the latest <strong>nubo</strong> client application for macOS:</p>
 <ul>
-    <li><a href="https://aequans.com/download.php?file=3">Click here</a> to download the nubo package</li>
+    <li><a href="https://aequans.com/download.php?file=7">Click here</a> to download the nubo package</li>
     <li>Double-click the downloaded file to start installation</li>
 </ul>
 EOT;
@@ -192,7 +192,7 @@ EOT;
                 echo <<<EOT
 <p>To install the latest <strong>nubo</strong> client application for Linux:</p>
 <ul>
-    <li><a href="https://aequans.com/download.php?file=4">Click here</a> to download the nubo package</li>
+    <li><a href="https://aequans.com/download.php?file=8">Click here</a> to download the nubo package</li>
     <li>Open a terminal and change to the directory where the package has been downloaded</li>
     <li>Type: sudo dpkg -i nubo.deb</li>
 </ul>
@@ -201,7 +201,7 @@ EOT;
                 echo <<<EOT
 <p>To install the latest <strong>nubo</strong> client application for Windows:</p>
 <ul>
-    <li><a href="https://aequans.com/download.php?file=6">Click here</a> to download the nubo installer</li>
+    <li><a href="https://aequans.com/download.php?file=9">Click here</a> to download the nubo installer</li>
     <li>Double-click the downloaded file to start installation</li>
 </ul>
 EOT;

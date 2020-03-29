@@ -46,6 +46,7 @@ data Error =
     | ErrMsgPackDecoding String
     | ErrCloudNotInitialized
     | ErrCloudAuthenticationFailed
+    | ErrCloudLocked
     | ErrCloudGeneric String
     | ErrIOException String String
     | ErrInvalidMasterKey
@@ -97,6 +98,7 @@ renderError (ErrServer500 status)           = "internal server error (HTTP " ++ 
 renderError (ErrMsgPackDecoding msg)        = "server response decoding failed (" ++ msg ++ ")"
 renderError (ErrCloudNotInitialized)        = "cloud not initialised"
 renderError (ErrCloudAuthenticationFailed)  = "authentication failed"
+renderError (ErrCloudLocked)                = "cloud already locked by another client"
 renderError (ErrCloudGeneric msg)           = "unexpected server error (" ++ msg ++ ")"
 renderError (ErrIOException path msg)       = "I/O error while accessing file '" ++ path ++ "': " ++ msg
 renderError (ErrInvalidMasterKey)           = "the server returned an invalid master key"
