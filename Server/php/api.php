@@ -162,6 +162,17 @@
         return ['hash' => $row['hash'], 'mtime' => $row['mtime'], 'content' => $content];
     }
 
+    // Rename command. Change the name of a file, without changing its
+    // hash, modification time or content.
+
+    function cmd_rename($db, $params, $computer) {
+        if (!isset($params['oldname']) || !isset($params['newname'])) {
+            throw new NuboException(ERROR_MISSING_PARAMETER);
+        }
+        $db->execute('UPDATE tbl_file SET filename=:newname WHERE filename=:oldname', ['oldname/text' => $params['oldname'], 'newname/text' => $params['newname']]);
+        return [];
+    }
+
     // Delete command. Remove an archive or a directory from the database
     // and from the disk.
 
